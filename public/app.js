@@ -389,6 +389,9 @@ function renderDossiers(items) {
             <button onclick="printSlipDirect(${dossier.id})" class="p-2 text-slate-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg text-xs font-semibold transition" title="In phiếu theo dõi">
               <i data-lucide="printer" class="w-4 h-4"></i>
             </button>
+            <button onclick="deleteDossierDirect(${dossier.id}, '${dossier.code}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg text-xs font-semibold transition" title="Xóa hồ sơ">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
           </div>
         </div>
       </div>
@@ -459,6 +462,31 @@ async function quickUpdateStatus(id, newStatus, actionName) {
     });
     if (!res.ok) throw new Error('Không thể cập nhật trạng thái');
 
+    loadDossiers();
+  } catch (err) {
+    alert('Lỗi: ' + err.message);
+  }
+}
+
+// Direct delete from card
+async function deleteDossierDirect(id, code) {
+  if (!confirm(`Bạn có chắc chắn muốn xóa hồ sơ: ${code}?`)) return;
+  try {
+    const res = await fetch(`/api/dossiers/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Không thể xóa hồ sơ');
+    loadDossiers();
+  } catch (err) {
+    alert('Lỗi: ' + err.message);
+  }
+}
+
+// Clear all sample demo dossiers
+async function clearSampleDossiers() {
+  if (!confirm('Bạn có chắc chắn muốn xóa tất cả các hồ sơ mẫu ban đầu để bắt đầu làm việc với hồ sơ thực tế của phòng?')) return;
+  try {
+    const res = await fetch('/api/dossiers/clear-samples', { method: 'POST' });
+    if (!res.ok) throw new Error('Không thể xóa dữ liệu mẫu');
+    alert('Đã xóa toàn bộ hồ sơ mẫu thành công!');
     loadDossiers();
   } catch (err) {
     alert('Lỗi: ' + err.message);
@@ -563,6 +591,7 @@ async function submitDossierForm() {
       throw new Error(errData.error || 'Có lỗi xảy ra');
     }
 
+    alert(id ? 'Đã cập nhật hồ sơ thành công!' : 'Đã tiếp nhận hồ sơ mới thành công!');
     closeModal('dossierModal');
     loadDossiers();
   } catch (err) {
@@ -833,12 +862,15 @@ async function printSlipDirect(id) {
 // Mobile QR Code Modal
 async function openQrModal() {
   try {
-    const res = await fetch('/api/network-info');
+    const currentOrigin = window.location.origin;
+    const res = await fetch(`/api/network-info?url=${encodeURIComponent(currentOrigin)}`);
     if (!res.ok) throw new Error('Không thể lấy thông tin mạng');
     const info = await res.json();
 
+    const displayUrl = currentOrigin.includes('localhost') ? (info.mobileUrl || currentOrigin) : currentOrigin;
+
     document.getElementById('qrImage').src = info.qrDataUrl;
-    document.getElementById('qrUrlText').textContent = info.mobileUrl;
+    document.getElementById('qrUrlText').textContent = displayUrl;
 
     openModal('qrModal');
   } catch (err) {

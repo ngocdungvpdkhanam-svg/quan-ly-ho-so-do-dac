@@ -33,6 +33,12 @@
       </div>
 
       <div class="flex items-center space-x-2">
+        <!-- Nút xóa hồ sơ mẫu -->
+        <button onclick="clearSampleDossiers()" class="hidden lg:flex items-center gap-1.5 bg-slate-700 hover:bg-red-700 px-2.5 py-1.5 rounded-lg text-xs font-medium transition shadow-sm text-slate-200 hover:text-white" title="Xóa các hồ sơ mẫu ban đầu">
+          <i data-lucide="trash" class="w-3.5 h-3.5"></i>
+          <span>Xóa dữ liệu mẫu</span>
+        </button>
+
         <!-- Nút mã QR cho điện thoại -->
         <button id="btnOpenQrModal" class="flex items-center gap-1.5 bg-blue-700 hover:bg-blue-600 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition shadow-sm" title="Mở trên điện thoại bằng mã QR">
           <i data-lucide="smartphone" class="w-4 h-4"></i>
@@ -240,14 +246,20 @@
   <div id="dossierModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
       <!-- Modal Header -->
-      <div class="bg-blue-800 text-white px-5 py-3.5 flex items-center justify-between shrink-0">
-        <h3 id="modalTitle" class="text-base font-bold flex items-center gap-2">
-          <i data-lucide="folder-plus" class="w-5 h-5 text-yellow-300"></i>
+      <div class="bg-blue-800 text-white px-4 sm:px-5 py-3 flex items-center justify-between shrink-0">
+        <h3 id="modalTitle" class="text-sm sm:text-base font-bold flex items-center gap-2 truncate">
+          <i data-lucide="folder-plus" class="w-5 h-5 text-yellow-300 shrink-0"></i>
           <span>Tiếp nhận hồ sơ đo đạc mới</span>
         </h3>
-        <button onclick="closeModal('dossierModal')" class="text-blue-200 hover:text-white p-1 rounded-lg">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="submitDossierForm()" class="bg-yellow-500 hover:bg-yellow-400 text-slate-900 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow">
+            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+            <span>Lưu</span>
+          </button>
+          <button onclick="closeModal('dossierModal')" class="text-blue-200 hover:text-white p-1 rounded-lg">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
       </div>
 
       <!-- Modal Body -->

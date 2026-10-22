@@ -409,6 +409,31 @@ app.delete('/api/dossiers/:id', (req, res) => {
   }
 });
 
+// 7b. Delete all sample dossiers or clear all
+app.post('/api/dossiers/clear-samples', (req, res) => {
+  try {
+    // Delete sample dossiers (HS-2026-001 to HS-2026-004) or wipe all
+    const sampleCodes = ['HS-2026-001', 'HS-2026-002', 'HS-2026-003', 'HS-2026-004'];
+    const placeholders = sampleCodes.map(() => '?').join(',');
+    
+    // Get attachments for samples
+    const sampleIds = db.prepare(`SELECT id FROM dossiers WHERE code IN (${placeholders})`).all(...sampleCodes).map(r => r.id);
+    for (const id of sampleIds) {
+      const files = db.prepare('SELECT filename FROM dossier_attachments WHERE dossier_id = ?').all(id);
+      for (const f of files) {
+        const filePath = path.join(uploadsDir, f.filename);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      }
+      db.prepare('DELETE FROM dossier_attachments WHERE dossier_id = ?').run(id);
+      db.prepare('DELETE FROM dossiers WHERE id = ?').run(id);
+    }
+    
+    res.json({ success: true, message: 'Đã xóa toàn bộ hồ sơ mẫu thành công' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 8. Upload attachments (Field photos / survey minutes / documents)
 app.post('/api/dossiers/:id/attachments', upload.array('files', 10), (req, res) => {
   try {
@@ -634,19 +659,31 @@ app.get('/api/export-excel', async (req, res) => {
 // 11. Network info & QR Code generation for mobile direct connection
 app.get('/api/network-info', async (req, res) => {
   try {
-    const ips = getLocalIpAddresses();
-    const primaryIp = ips[0] || 'localhost';
-    const mobileUrl = `http://${primaryIp}:${PORT}`;
+    let mobileUrl = req.query.url;
+
+    if (!mobileUrl) {
+      const host = req.get('host') || '';
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+
+      if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
+        // We are on a public cloud domain (e.g. Render, Railway)
+        mobileUrl = `${protocol}://${host}`;
+      } else {
+        // Local network
+        const ips = getLocalIpAddresses();
+        const primaryIp = ips[0] || 'localhost';
+        mobileUrl = `http://${primaryIp}:${PORT}`;
+      }
+    }
+
     const qrDataUrl = await QRCode.toDataURL(mobileUrl, {
       margin: 1,
-      width: 250,
+      width: 280,
       color: { dark: '#0F172A', light: '#FFFFFF' }
     });
 
     res.json({
       port: PORT,
-      primaryIp,
-      ips,
       mobileUrl,
       qrDataUrl
     });
