@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Quản lý Hồ sơ Đo đạc Địa chính</title>
+  <meta name="theme-color" content="#1e40af">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="/manifest.json">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen pb-20 md:pb-6">
+
+  <!-- TOP HEADER -->
+  <header class="bg-blue-800 text-white sticky top-0 z-30 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="bg-blue-700 p-2 rounded-lg flex items-center justify-center">
+          <i data-lucide="compass" class="w-6 h-6 text-yellow-300"></i>
+        </div>
+        <div>
+          <h1 class="text-base md:text-lg font-bold leading-tight flex items-center gap-1.5">
+            HỒ SƠ ĐO ĐẠC ĐỊA CHÍNH
+            <span class="hidden md:inline-block text-xs bg-blue-900 text-blue-200 px-2 py-0.5 rounded font-normal">Phòng Kỹ thuật</span>
+          </h1>
+          <p class="text-xs text-blue-200">Văn phòng Đăng ký Đất đai</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <!-- Nút mã QR cho điện thoại -->
+        <button id="btnOpenQrModal" class="flex items-center gap-1.5 bg-blue-700 hover:bg-blue-600 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition shadow-sm" title="Mở trên điện thoại bằng mã QR">
+          <i data-lucide="smartphone" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Vào từ điện thoại</span>
+        </button>
+
+        <!-- Nút xuất Excel -->
+        <a href="/api/export-excel" class="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition shadow-sm" title="Xuất sổ theo dõi Excel">
+          <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Xuất Excel</span>
+        </a>
+
+        <!-- Nút thêm mới (Desktop) -->
+        <button onclick="openCreateModal()" class="hidden md:flex items-center gap-1.5 bg-yellow-500 hover:bg-yellow-400 text-slate-900 px-3.5 py-1.5 rounded-lg text-sm font-bold transition shadow-sm">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>Tiếp nhận HS mới</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-3 sm:px-4 py-4 space-y-4">
+
+    <!-- KPI / THỐNG KÊ NHANH -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+      <div onclick="setQuickFilter('ALL')" class="stat-card bg-white p-3 rounded-xl shadow-sm border border-slate-200 cursor-pointer hover:border-blue-400 transition">
+        <div class="flex items-center justify-between text-slate-500 mb-1">
+          <span class="text-xs font-semibold uppercase">Tổng hồ sơ</span>
+          <i data-lucide="folder-archive" class="w-4 h-4 text-blue-600"></i>
+        </div>
+        <div class="text-xl md:text-2xl font-bold text-slate-900" id="statTotal">0</div>
+        <div class="text-[11px] text-slate-400">Tất cả hồ sơ</div>
+      </div>
+
+      <div onclick="setQuickFilter('today_survey')" class="stat-card bg-white p-3 rounded-xl shadow-sm border border-slate-200 cursor-pointer hover:border-blue-400 transition">
+        <div class="flex items-center justify-between text-blue-600 mb-1">
+          <span class="text-xs font-semibold uppercase">Hôm nay đi đo</span>
+          <i data-lucide="calendar" class="w-4 h-4"></i>
+        </div>
+        <div class="text-xl md:text-2xl font-bold text-blue-700" id="statTodaySurvey">0</div>
+        <div class="text-[11px] text-blue-500">Cần thực địa hôm nay</div>
+      </div>
+
+      <div onclick="setQuickFilter('status:CHO_DO')" class="stat-card bg-white p-3 rounded-xl shadow-sm border border-slate-200 cursor-pointer hover:border-blue-400 transition">
+        <div class="flex items-center justify-between text-amber-600 mb-1">
+          <span class="text-xs font-semibold uppercase">Chờ đi đo</span>
+          <i data-lucide="clock" class="w-4 h-4"></i>
+        </div>
+        <div class="text-xl md:text-2xl font-bold text-amber-600" id="statChoDo">0</div>
+        <div class="text-[11px] text-amber-500">Chưa đo thực địa</div>
+      </div>
+
+      <div onclick="setQuickFilter('status:DANG_NOI_NGHIEP')" class="stat-card bg-white p-3 rounded-xl shadow-sm border border-slate-200 cursor-pointer hover:border-blue-400 transition">
+        <div class="flex items-center justify-between text-indigo-600 mb-1">
+          <span class="text-xs font-semibold uppercase">Đang vẽ/Nội nghiệp</span>
+          <i data-lucide="layers" class="w-4 h-4"></i>
+        </div>
+        <div class="text-xl md:text-2xl font-bold text-indigo-600" id="statDangNoiNghiep">0</div>
+        <div class="text-[11px] text-indigo-400">Đang biên tập bản đồ</div>
+      </div>
+
+      <div onclick="setQuickFilter('due_soon')" class="stat-card bg-white p-3 rounded-xl shadow-sm border border-slate-200 cursor-pointer hover:border-blue-400 transition">
+        <div class="flex items-center justify-between text-emerald-600 mb-1">
+          <span class="text-xs font-semibold uppercase">Chờ trả HS</span>
+          <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+        </div>
+        <div class="text-xl md:text-2xl font-bold text-emerald-600" id="statChoTra">0</div>
+        <div class="text-[11px] text-emerald-500">Bản đồ đã duyệt</div>
+      </div>
+
+      <div onclick="setQuickFilter('overdue')" class="stat-card bg-white p-3 rounded-xl shadow-sm border border-slate-200 cursor-pointer hover:border-red-400 transition">
+        <div class="flex items-center justify-between text-red-600 mb-1">
+          <span class="text-xs font-semibold uppercase">Trễ / Quá hạn</span>
+          <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+        </div>
+        <div class="text-xl md:text-2xl font-bold text-red-600" id="statOverdue">0</div>
+        <div class="text-[11px] text-red-500">Quá ngày hẹn trả</div>
+      </div>
+    </div>
+
+    <!-- KHU VỰC TÌM KIẾM & BỘ LỌC CHIPS -->
+    <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200 space-y-3">
+      <!-- Search Input -->
+      <div class="relative">
+        <i data-lucide="search" class="w-5 h-5 absolute left-3.5 top-3 text-slate-400"></i>
+        <input 
+          type="text" 
+          id="searchInput" 
+          placeholder="Tìm nhanh: Mã HS, tên chủ đất, số ĐT, số tờ, số thửa, cán bộ..." 
+          class="w-full pl-11 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+        >
+        <button id="btnClearSearch" class="hidden absolute right-3 top-2.5 text-slate-400 hover:text-slate-600">
+          <i data-lucide="x-circle" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Quick Filter Chips for Mobile / Touch -->
+      <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs font-medium">
+        <button onclick="setQuickFilter('ALL')" id="filterChip-ALL" class="filter-chip active-chip px-3 py-1.5 rounded-full whitespace-nowrap bg-blue-700 text-white shadow-sm">
+          Tất cả
+        </button>
+        <button onclick="setQuickFilter('today_survey')" id="filterChip-today_survey" class="filter-chip px-3 py-1.5 rounded-full whitespace-nowrap bg-slate-100 text-slate-700 hover:bg-slate-200">
+          📍 Hôm nay đi đo
+        </button>
+        <button onclick="setQuickFilter('overdue')" id="filterChip-overdue" class="filter-chip px-3 py-1.5 rounded-full whitespace-nowrap bg-red-50 text-red-700 border border-red-200 hover:bg-red-100">
+          ⚠️ Quá hạn trả
+        </button>
+        <button onclick="setQuickFilter('status:CHO_DO')" id="filterChip-status-CHO_DO" class="filter-chip px-3 py-1.5 rounded-full whitespace-nowrap bg-slate-100 text-slate-700 hover:bg-slate-200">
+          Chờ đi đo
+        </button>
+        <button onclick="setQuickFilter('status:DANG_NOI_NGHIEP')" id="filterChip-status-DANG_NOI_NGHIEP" class="filter-chip px-3 py-1.5 rounded-full whitespace-nowrap bg-slate-100 text-slate-700 hover:bg-slate-200">
+          Đang nội nghiệp
+        </button>
+        <button onclick="setQuickFilter('status:CHO_TRA')" id="filterChip-status-CHO_TRA" class="filter-chip px-3 py-1.5 rounded-full whitespace-nowrap bg-slate-100 text-slate-700 hover:bg-slate-200">
+          Chờ trả hồ sơ
+        </button>
+        <button onclick="setQuickFilter('status:DA_TRA')" id="filterChip-status-DA_TRA" class="filter-chip px-3 py-1.5 rounded-full whitespace-nowrap bg-slate-100 text-slate-700 hover:bg-slate-200">
+          Đã trả kết quả
+        </button>
+      </div>
+
+      <!-- Advanced Filters Dropdown (Cán bộ & Xã) -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-slate-100 text-xs">
+        <div>
+          <label class="block text-slate-500 mb-1">Cán bộ phụ trách:</label>
+          <select id="filterSurveyor" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500">
+            <option value="">Tất cả cán bộ</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-slate-500 mb-1">Xã / Phường:</label>
+          <select id="filterCommune" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500">
+            <option value="">Tất cả xã/phường</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-slate-500 mb-1">Sắp xếp theo:</label>
+          <select id="sortBy" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500">
+            <option value="id-DESC">Mới tạo nhất</option>
+            <option value="date_survey-ASC">Ngày đi đo sớm nhất</option>
+            <option value="date_return-ASC">Ngày hẹn trả gấp nhất</option>
+            <option value="date_received-DESC">Ngày tiếp nhận gần nhất</option>
+          </select>
+        </div>
+        <div class="flex items-end">
+          <button onclick="resetFilters()" class="w-full py-2 px-3 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition font-medium">
+            Đặt lại bộ lọc
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DANH SÁCH HỒ SƠ -->
+    <div class="space-y-3">
+      <div class="flex items-center justify-between px-1">
+        <h2 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+          <span>DANH SÁCH HỒ SƠ</span>
+          <span id="resultsCountBadge" class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-semibold">0</span>
+        </h2>
+        <span class="text-xs text-slate-400" id="lastUpdatedTime">Đang tải...</span>
+      </div>
+
+      <!-- Container danh sách hồ sơ (render động) -->
+      <div id="dossiersContainer" class="space-y-3">
+        <!-- Loading state -->
+        <div class="text-center py-12 text-slate-400">
+          <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
+          <p class="mt-2 text-sm">Đang tải dữ liệu hồ sơ đo đạc...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- MOBILE FLOATING ACTION BUTTON (Thêm hồ sơ) -->
+  <button onclick="openCreateModal()" class="md:hidden fixed right-4 bottom-20 z-40 bg-yellow-500 hover:bg-yellow-400 active:scale-95 text-slate-900 w-14 h-14 rounded-full shadow-lg flex items-center justify-center font-bold transition">
+    <i data-lucide="plus" class="w-7 h-7"></i>
+  </button>
+
+  <!-- BOTTOM BAR FOR MOBILE -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-30 px-3 py-1.5 flex items-center justify-around shadow-lg">
+    <button onclick="setTab('list')" id="nav-list" class="flex flex-col items-center text-blue-700 py-1 px-2">
+      <i data-lucide="list-filter" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium mt-0.5">Danh sách</span>
+    </button>
+    <button onclick="setQuickFilter('today_survey')" id="nav-today" class="flex flex-col items-center text-slate-500 py-1 px-2">
+      <i data-lucide="map-pin" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium mt-0.5">Hôm nay đo</span>
+    </button>
+    <button onclick="openCreateModal()" class="flex flex-col items-center text-slate-500 py-1 px-2">
+      <i data-lucide="file-plus" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium mt-0.5">Tiếp nhận</span>
+    </button>
+    <button onclick="setQuickFilter('overdue')" id="nav-overdue" class="flex flex-col items-center text-slate-500 py-1 px-2">
+      <i data-lucide="alert-circle" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium mt-0.5">Trễ hạn</span>
+    </button>
+    <button onclick="openQrModal()" class="flex flex-col items-center text-slate-500 py-1 px-2">
+      <i data-lucide="qr-code" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium mt-0.5">Kết nối</span>
+    </button>
+  </nav>
+
+  <!-- MODAL: THÊM / SỬA HỒ SƠ -->
+  <div id="dossierModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <!-- Modal Header -->
+      <div class="bg-blue-800 text-white px-5 py-3.5 flex items-center justify-between shrink-0">
+        <h3 id="modalTitle" class="text-base font-bold flex items-center gap-2">
+          <i data-lucide="folder-plus" class="w-5 h-5 text-yellow-300"></i>
+          <span>Tiếp nhận hồ sơ đo đạc mới</span>
+        </h3>
+        <button onclick="closeModal('dossierModal')" class="text-blue-200 hover:text-white p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <form id="dossierForm" class="p-5 space-y-4 overflow-y-auto flex-1">
+        <input type="hidden" id="formDossierId">
+
+        <!-- 3 MỐC THỜI GIAN QUAN TRỌNG (NHẬN - ĐO - TRẢ) -->
+        <div class="bg-blue-50 border border-blue-200 p-3.5 rounded-xl space-y-2">
+          <div class="text-xs font-bold text-blue-900 uppercase flex items-center gap-1.5">
+            <i data-lucide="calendar-clock" class="w-4 h-4 text-blue-700"></i>
+            <span>3 Mốc thời gian trọng tâm</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">1. Ngày nhận hồ sơ <span class="text-red-500">*</span></label>
+              <input type="date" id="formDateReceived" required class="w-full p-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-blue-700 mb-1">2. Ngày đi đo thực địa</label>
+              <input type="date" id="formDateSurvey" class="w-full p-2 bg-white border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-emerald-700 mb-1">3. Ngày hẹn trả kết quả</label>
+              <input type="date" id="formDateReturn" class="w-full p-2 bg-white border border-emerald-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+        </div>
+
+        <!-- THÔNG TIN HỒ SƠ & CHỦ ĐẤT -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Mã hồ sơ / Biên nhận</label>
+            <input type="text" id="formCode" placeholder="Tự sinh nếu để trống (HS-2026-xxx)" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Chủ sử dụng đất <span class="text-red-500">*</span></label>
+            <input type="text" id="formCustomerName" required placeholder="Họ và tên chủ đất / người nộp" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Số điện thoại liên hệ</label>
+            <input type="tel" id="formPhone" placeholder="09xxxxxxxx" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Cán bộ phụ trách đo đạc</label>
+            <input type="text" id="formSurveyorName" placeholder="Tên cán bộ kỹ thuật" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+
+        <!-- THÔNG TIN THỬA ĐẤT -->
+        <div class="border-t border-slate-200 pt-3.5 space-y-3">
+          <div class="text-xs font-bold text-slate-700 uppercase flex items-center gap-1.5">
+            <i data-lucide="map" class="w-4 h-4 text-slate-500"></i>
+            <span>Thông tin thửa đất đo vẽ</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-slate-600 mb-1">Xã / Phường / Thị trấn</label>
+              <input type="text" id="formCommune" placeholder="Ví dụ: Xã Tân Triều" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-600 mb-1">Thôn / Ấp / Tổ dân phố</label>
+              <input type="text" id="formVillage" placeholder="Ví dụ: Thôn Triều Khúc" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div>
+              <label class="block text-xs text-slate-600 mb-1">Tờ bản đồ số</label>
+              <input type="text" id="formSheetNumber" placeholder="Ví dụ: 12" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-600 mb-1">Thửa đất số</label>
+              <input type="text" id="formPlotNumber" placeholder="Ví dụ: 45" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-600 mb-1">Diện tích (m²)</label>
+              <input type="number" step="0.1" id="formArea" placeholder="100.0" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-600 mb-1">Loại đất</label>
+              <input type="text" id="formLandType" value="ONT" placeholder="ONT, ODT, CLN..." class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+        </div>
+
+        <!-- LOẠI HÌNH ĐO & TRẠNG THÁI -->
+        <div class="border-t border-slate-200 pt-3.5 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Loại hình đo đạc</label>
+            <select id="formSurveyType" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+              <option value="Trích lục địa chính">Trích lục địa chính</option>
+              <option value="Phân lô tách thửa">Phân lô tách thửa</option>
+              <option value="Hợp thửa đất">Hợp thửa đất</option>
+              <option value="Cấp mới GCN lần đầu">Cấp mới GCN lần đầu</option>
+              <option value="Chỉnh lý biến động">Chỉnh lý biến động</option>
+              <option value="Cắm mốc ranh giới thửa đất">Cắm mốc ranh giới thửa đất</option>
+              <option value="Đo phục vụ cấp đổi GCN">Đo phục vụ cấp đổi GCN</option>
+              <option value="Khác">Khác...</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Trạng thái hồ sơ</label>
+            <select id="formStatus" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-blue-500">
+              <option value="CHO_DO" class="text-amber-700">Chờ đi đo (Mới nhận)</option>
+              <option value="DANG_NOI_NGHIEP" class="text-indigo-700">Đã đi đo - Đang nội nghiệp bản đồ</option>
+              <option value="CHO_TRA" class="text-blue-700">Đã duyệt - Chờ trả kết quả</option>
+              <option value="DA_TRA" class="text-emerald-700">Đã trả kết quả cho khách</option>
+              <option value="VUONG_MAC" class="text-red-700">Vướng mắc / Tạm dừng</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- GHI CHÚ -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Ghi chú / Hiện trạng ranh mốc</label>
+          <textarea id="formNotes" rows="2" placeholder="Ghi chú thời gian đo cụ thể, hiện trạng tranh chấp, mốc giới..." class="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+      </form>
+
+      <!-- Modal Footer -->
+      <div class="bg-slate-100 px-5 py-3 flex items-center justify-end space-x-2 border-t border-slate-200 shrink-0">
+        <button type="button" onclick="closeModal('dossierModal')" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-lg transition">
+          Hủy bỏ
+        </button>
+        <button type="button" onclick="submitDossierForm()" class="px-5 py-2 text-sm font-bold bg-blue-700 hover:bg-blue-600 text-white rounded-lg transition shadow-md flex items-center gap-1.5">
+          <i data-lucide="save" class="w-4 h-4"></i>
+          <span>Lưu hồ sơ</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: XEM CHI TIẾT & ẢNH HIỆN TRƯỜNG -->
+  <div id="detailModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <!-- Modal Header -->
+      <div class="bg-slate-900 text-white px-5 py-3 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2">
+          <span id="detailBadgeCode" class="text-xs bg-blue-600 px-2 py-0.5 rounded font-mono font-bold">HS-2026-001</span>
+          <h3 id="detailTitle" class="text-sm md:text-base font-bold truncate">Chi tiết hồ sơ đo đạc</h3>
+        </div>
+        <button onclick="closeModal('detailModal')" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Detail Body -->
+      <div class="p-5 space-y-4 overflow-y-auto flex-1 text-sm">
+        <!-- Status & Dates Bar -->
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-3">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <span class="text-xs text-slate-500 font-semibold">Trạng thái hiện tại:</span>
+            <div id="detailStatusBadge" class="text-xs font-bold px-3 py-1 rounded-full">...</div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-center pt-2 border-t border-slate-200 text-xs">
+            <div class="bg-white p-2 rounded-lg border border-slate-200">
+              <span class="text-slate-400 block text-[10px] uppercase font-bold">1. Ngày nhận</span>
+              <span id="detailDateReceived" class="font-bold text-slate-800">--/--/----</span>
+            </div>
+            <div class="bg-white p-2 rounded-lg border border-slate-200">
+              <span class="text-blue-500 block text-[10px] uppercase font-bold">2. Ngày đi đo</span>
+              <span id="detailDateSurvey" class="font-bold text-blue-700">--/--/----</span>
+            </div>
+            <div class="bg-white p-2 rounded-lg border border-slate-200">
+              <span class="text-emerald-500 block text-[10px] uppercase font-bold">3. Hẹn trả KQ</span>
+              <span id="detailDateReturn" class="font-bold text-emerald-700">--/--/----</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info Grid -->
+        <div class="grid grid-cols-2 gap-3 text-xs sm:text-sm">
+          <div>
+            <span class="text-slate-500 block text-xs">Chủ sử dụng đất:</span>
+            <strong id="detailCustomerName" class="text-slate-900 text-base">---</strong>
+          </div>
+          <div>
+            <span class="text-slate-500 block text-xs">Số điện thoại:</span>
+            <div id="detailPhoneContainer" class="flex items-center gap-1.5 font-bold text-blue-700">---</div>
+          </div>
+          <div>
+            <span class="text-slate-500 block text-xs">Địa chỉ thửa đất:</span>
+            <span id="detailAddress" class="text-slate-800">---</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block text-xs">Tờ BĐ / Thửa đất:</span>
+            <span id="detailPlotSheet" class="font-bold text-slate-900">---</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block text-xs">Diện tích / Loại đất:</span>
+            <span id="detailAreaType" class="text-slate-800">---</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block text-xs">Cán bộ phụ trách:</span>
+            <span id="detailSurveyor" class="font-medium text-slate-800">---</span>
+          </div>
+        </div>
+
+        <div class="bg-yellow-50/70 border border-yellow-200 p-3 rounded-lg text-xs">
+          <span class="font-bold text-yellow-900 block mb-0.5">Ghi chú / Mô tả:</span>
+          <p id="detailNotes" class="text-slate-700 whitespace-pre-line">Không có ghi chú</p>
+        </div>
+
+        <!-- PHẦN ẢNH HIỆN TRƯỜNG & TỆP ĐÍNH KÈM -->
+        <div class="border-t border-slate-200 pt-3 space-y-2">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-slate-700 uppercase flex items-center gap-1.5">
+              <i data-lucide="camera" class="w-4 h-4 text-blue-600"></i>
+              <span>Ảnh thực địa & Biên bản đo đạc (<span id="attachmentCount">0</span>)</span>
+            </h4>
+
+            <!-- Nút chụp ảnh từ điện thoại -->
+            <label class="cursor-pointer bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+              <span>Chụp / Tải ảnh</span>
+              <input type="file" id="cameraFileInput" accept="image/*,application/pdf" multiple class="hidden" onchange="uploadAttachments(this)">
+            </label>
+          </div>
+
+          <!-- Attachments list -->
+          <div id="attachmentsGallery" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
+            <!-- Render dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Detail Footer Actions -->
+      <div class="bg-slate-100 px-5 py-3 flex items-center justify-between border-t border-slate-200 shrink-0">
+        <button type="button" id="btnDeleteDossier" class="text-xs font-semibold text-red-600 hover:text-red-800 flex items-center gap-1">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+          <span>Xóa hồ sơ</span>
+        </button>
+
+        <div class="flex items-center space-x-2">
+          <button type="button" id="btnPrintSlip" class="px-3 py-2 text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg flex items-center gap-1">
+            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+            <span>In phiếu theo dõi</span>
+          </button>
+          <button type="button" id="btnEditDossier" class="px-4 py-2 text-xs font-bold bg-blue-700 hover:bg-blue-600 text-white rounded-lg flex items-center gap-1 shadow">
+            <i data-lucide="edit" class="w-3.5 h-3.5"></i>
+            <span>Chỉnh sửa</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: KẾT NỐI ĐIỆN THOẠI BẰNG MÃ QR -->
+  <div id="qrModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center space-y-4 animate-in fade-in zoom-in-95 duration-150">
+      <div class="w-12 h-12 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center mx-auto">
+        <i data-lucide="smartphone" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-slate-900">Quét mã mở trên Điện thoại</h3>
+        <p class="text-xs text-slate-500 mt-1">Dùng Camera hoặc Zalo quét mã để mở giao diện quản lý trên điện thoại (cùng mạng Wi-Fi)</p>
+      </div>
+
+      <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col items-center justify-center">
+        <img id="qrImage" src="" alt="Mã QR kết nối" class="w-48 h-48 rounded-lg shadow-sm">
+        <p class="text-xs text-blue-700 font-mono mt-3 font-semibold break-all" id="qrUrlText">http://...</p>
+      </div>
+
+      <button onclick="closeModal('qrModal')" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium text-sm transition">
+        Đóng lại
+      </button>
+    </div>
+  </div>
+
+  <!-- PRINT SLIP CONTAINER (Ẩn trên màn hình, chỉ xuất hiện khi In) -->
+  <div id="printArea" class="hidden"></div>
+
+  <!-- Scripts -->
+  <script src="/app.js"></script>
+</body>
+</html>
